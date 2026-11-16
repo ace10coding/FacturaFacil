@@ -22,7 +22,7 @@ Tudo o que está descrito abaixo funciona e foi testado neste ambiente:
 
 O pedido original especifica Supabase. Este ambiente não tem credenciais Supabase, por isso a aplicação corre com um backend real em **SQLite** (`node:sqlite`), incluído no Node 24, para que todas as funcionalidades possam ser executadas e demonstradas sem serviços externos.
 
-O caminho de produção está preparado em `supabase/migrations/0001_init.sql`: esquema PostgreSQL completo, políticas RLS, bucket de logótipos e função atómica de numeração. **Essa migração ainda não foi executada num projeto Supabase.** Para produção, é necessário aplicar a migração e substituir a camada de acesso a dados pelo cliente Supabase (ou ligar o Postgres diretamente). Não há aqui qualquer afirmação de que o Supabase esteja a correr.
+O caminho de produção está preparado em `supabase/migrations/0001_init.sql`: esquema PostgreSQL completo, políticas RLS, bucket de logótipos e função atómica de numeração. **Essa migração ainda não foi executada num projeto Supabase.** Para produção, é necessário aplicar a migração e substituir a camada de acesso a dados pelo cliente Supabase (ou ligar o Postgres diretamente). Não há aqui qualquer afirmação de que o Supabase esteja a correr. Na Vercel, o SQLite e os uploads usam `/tmp` para evitar escritas no sistema de ficheiros imutável da função; esses dados são temporários e não substituem uma base de dados persistente.
 
 ## Arranque rápido
 
