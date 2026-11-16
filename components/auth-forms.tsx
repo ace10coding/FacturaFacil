@@ -80,7 +80,7 @@ export function DemoLoginForm() {
       <FormMessage tone="error">{message}</FormMessage>
       <button
         type="button"
-        className="btn btn-ghost mt-3 w-full"
+        className="btn btn-accent mt-3 w-full"
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
