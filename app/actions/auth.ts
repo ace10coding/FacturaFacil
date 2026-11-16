@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db, nowIso, uid } from "@/lib/db";
 import {
+  createDemoSession,
   createSession,
   destroySession,
   getBusinessForUser,
@@ -15,6 +16,7 @@ import {
 import { loginSchema, registerSchema } from "@/lib/schemas";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { DEMO_EMAIL, demoLoginEnabled } from "@/lib/demo";
+import { seedDemoData } from "@/lib/demo-seed";
 import { zodErrors, type ActionResult } from "@/lib/action";
 
 export async function registerAction(input: unknown): Promise<ActionResult> {
@@ -90,16 +92,27 @@ export async function demoLoginAction(): Promise<ActionResult<{ to: string }>> {
   const limit = rateLimit(await clientKey("demo-login"), 10, 15 * 60 * 1000);
   if (!limit.ok) return { ok: false, message: "Demasiadas tentativas. Tente novamente mais tarde." };
 
+  try {
+    seedDemoData();
+  } catch {
+    console.error("demo workspace setup failed");
+    return { ok: false, message: "Não foi possível preparar a demonstração. Tente novamente." };
+  }
+
   const row = db().prepare("SELECT id FROM users WHERE email = ?").get(DEMO_EMAIL) as
     | { id: string }
     | undefined;
   if (!row) {
-    return { ok: false, message: "A conta de demonstração ainda não foi criada. Execute npm run seed." };
+    return { ok: false, message: "Não foi possível preparar a demonstração. Tente novamente." };
   }
 
-  await createSession(row.id);
   const business = await getBusinessForUser(row.id);
-  return { ok: true, data: { to: business ? "/painel" : "/onboarding" } };
+  if (!business) {
+    return { ok: false, message: "Não foi possível preparar a empresa de demonstração. Tente novamente." };
+  }
+
+  await createDemoSession();
+  return { ok: true, data: { to: "/painel" } };
 }
 
 export async function signOutAction(): Promise<void> {

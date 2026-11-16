@@ -95,7 +95,7 @@ export function DemoLoginForm() {
           })
         }
       >
-        {pending ? "A entrar…" : "Explorar demonstração"}
+        {pending ? "A preparar demonstração…" : "Explorar demonstração"}
       </button>
       <p className="mt-2 text-center text-[11.5px] leading-relaxed muted">
         Entra com uma empresa de exemplo, já com clientes e cotações. Pode alterar tudo sem afetar clientes reais.
