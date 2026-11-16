@@ -2,12 +2,15 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { db, nowIso, uid } from "./db";
+import { DEMO_EMAIL, demoLoginEnabled } from "./demo";
+import { seedDemoData } from "./demo-seed";
 import { newOpaqueToken, sha256 } from "./hash";
 
 export { newOpaqueToken, sha256 };
 
 export const SESSION_COOKIE = "ff_session";
 const SESSION_DAYS = 30;
+const DEMO_SESSION_TOKEN = "ff_demo_preview";
 
 export type SessionUser = {
   id: string;
@@ -66,10 +69,22 @@ export async function createSession(userId: string): Promise<void> {
   });
 }
 
+export async function createDemoSession(): Promise<void> {
+  const expires = new Date(Date.now() + SESSION_DAYS * 86400000);
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, DEMO_SESSION_TOKEN, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    expires,
+  });
+}
+
 export async function destroySession(): Promise<void> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
-  if (token) {
+  if (token && token !== DEMO_SESSION_TOKEN) {
     db().prepare("DELETE FROM sessions WHERE token_hash = ?").run(sha256(token));
   }
   jar.delete(SESSION_COOKIE);
@@ -79,6 +94,19 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
+
+  if (token === DEMO_SESSION_TOKEN) {
+    if (!demoLoginEnabled()) return null;
+    seedDemoData();
+    const demoUser = db()
+      .prepare(
+        `SELECT u.id, u.email, p.full_name
+         FROM users u LEFT JOIN profiles p ON p.user_id = u.id
+         WHERE u.email = ?`,
+      )
+      .get(DEMO_EMAIL) as SessionUser | undefined;
+    return demoUser ?? null;
+  }
 
   const row = db()
     .prepare(
