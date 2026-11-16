@@ -1,8 +1,13 @@
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
-const dataDir = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
+const dataDir =
+  process.env.DATA_DIR ??
+  (process.env.NODE_ENV === "production"
+    ? path.join(tmpdir(), "facturafacil")
+    : path.join(process.cwd(), "data"));
 const uploadDir = path.join(dataDir, "uploads");
 mkdirSync(uploadDir, { recursive: true });
 
